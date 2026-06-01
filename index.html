@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>YouTube Walkie - 4 Canales Incrustados</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0a0a0f, #1a1a2e);
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 20px;
+        }
+        
+        /* HEADER ESTILO YOUTUBE */
+        .youtube-header {
+            background: #202020;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo-icon {
+            font-size: 2rem;
+        }
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+        }
+        .logo-text span {
+            color: #ff6b6b;
+        }
+        .stats {
+            color: #888;
+            font-size: 0.85rem;
+        }
+        
+        /* GRID ESTILO YOUTUBE */
+        .youtube-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        /* TARJETA ESTILO VIDEO YOUTUBE */
+        .video-card {
+            background: #1e1e2a;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,.5);
+        }
+        
+        /* THUMBNAIL / CONTENIDO DEL WALKIE */
+        .video-thumbnail {
+            position: relative;
+            background: #0a0a0f;
+            height: 580px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+        }
+        .video-thumbnail::-webkit-scrollbar {
+            width: 6px;
+        }
+        .video-thumbnail::-webkit-scrollbar-track {
+            background: #1e1e2a;
+        }
+        .video-thumbnail::-webkit-scrollbar-thumb {
+            background: #2ed573;
+            border-radius: 10px;
+        }
+        
+        /* DENTRO DE CADA WALKIE - ESTILO ORIGINAL COMPLETO */
+        .walkie-embed {
+            padding: 20px;
+        }
+        
+        /* Títulos dentro del embed */
+        .embed-header h2 {
+            color: #ff6b6b;
+            margin: 0 0 5px 0;
+            font-size: 1.3rem;
+            text-align: center;
+        }
+        .embed-header p {
+            color: #2ed573;
+            text-align: center;
+            font-size: 0.8rem;
+            margin-bottom: 15px;
+            font-family: monospace;
+        }
+        
+        /* Indicador de hablando */
+        .embed-indicador {
+            background: #0a0a0f;
+            border-radius: 12px;
+            padding: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+        .embed-indicador-off { color: #888; }
+        .embed-indicador-on { color: #ff4757; animation: pulse 1s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Selector panel */
+        .embed-selector {
+            background: #0a0a0f;
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+        .embed-selector-title {
+            color: #888;
+            font-size: 0.75rem;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .embed-user-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        .embed-user-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #2ed573;
+            background: transparent;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-align: center;
+        }
+        .embed-user-btn.selected {
+            background: #2ed573;
+            color: #0a0a0f;
+        }
+        
+        /* IDs panel */
+        .embed-ids {
+            background: #0a0a0f;
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+        .embed-id-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+        }
+        .embed-id-label { color: #888; }
+        .embed-id-value { color: #2ed573; font-family: monospace; font-weight: bold; }
+        
+        /* Auto status */
+        .embed-auto-status {
+            background: #1e1e2a;
+            border-radius: 10px;
+            padding: 8px;
+            margin-bottom: 15px;
+            font-size: 0.7rem;
+            text-align: center;
+            color: #888;
+        }
+        
+        /* Walkies mini */
+        .embed-walkies-mini {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        .embed-walkie-card {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background: #1e1e2a;
+            border-radius: 18px;
+            border: 2px solid transparent;
+        }
+        .embed-walkie-card.selected {
+            border-color: #2ed573;
+            background: #2ed57322;
+        }
+        .embed-walkie-num { font-size: 0.9rem; font-weight: bold; color: white; }
+        .embed-walkie-status { font-size: 0.65rem; margin-top: 4px; color: #aaa; }
+        .embed-walkie-id { font-size: 0.7rem; color: #2ed573; margin-top: 4px; font-weight: bold; }
+        
+        /* Botonera */
+        .embed-botonera {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .embed-botonera button {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+        .embed-modo { background: #2ed573; }
+        .embed-limpiar { background: #e74c3c; }
+        .embed-llamar { background: #9b59b6; }
+        .embed-manos { background: #3498db; }
+        .embed-manos.activo { background: #2ed573; }
+        
+        /* PTT */
+        .embed-ptt {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: radial-gradient(#34495e, #2c3e50);
+            border: 4px solid #ecf0f1;
+            cursor: pointer;
+            margin: 15px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: white;
+            text-align: center;
+        }
+        .embed-ptt.disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        
+        /* Chat */
+        .embed-chat-area {
+            margin-top: 15px;
+            border-top: 1px solid #2c2c3e;
+            padding-top: 12px;
+        }
+        .embed-chat-header {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .embed-chat-header button {
+            flex: 1;
+            padding: 6px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+        .embed-chat-msgs {
+            background: #0a0a0f;
+            border-radius: 14px;
+            padding: 8px;
+            height: 100px;
+            overflow-y: auto;
+            font-size: 0.7rem;
+        }
+        .embed-mensaje-propio { text-align: right; margin: 4px 0; color: #2ed573; }
+        .embed-mensaje-otro { text-align: left; margin: 4px 0; color: #ffa502; }
+        .embed-input-texto {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .embed-input-texto input {
+            flex: 1;
+            padding: 8px;
+            border-radius: 20px;
+            border: none;
+            background: #1e1e2a;
+            color: white;
+            font-size: 0.7rem;
+        }
+        .embed-input-texto button {
+            background: #2ed573;
+            border: none;
+            border-radius: 20px;
+            padding: 0 12px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+        
+        .embed-estado {
+            text-align: center;
+            margin-top: 12px;
+            padding: 6px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+        }
+        
+        /* Info del video (pie) */
+        .video-info {
+            padding: 12px 15px;
+            background: #2c2c3e;
+        }
+        .video-title {
+            font-weight: bold;
+            color: white;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+        .video-channel {
+            color: #2ed573;
+            font-size: 0.75rem;
+            font-family: monospace;
+        }
+        .video-stats {
+            color: #888;
+            font-size: 0.7rem;
+            margin-top: 5px;
+        }
+        
+        @media (max-width: 1000px) {
+            .youtube-grid {
+                grid-template-columns: 1fr;
+            }
+            .video-thumbnail {
+                height: auto;
+                max-height: 600px;
+            }
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2ed573;
+            color: #0a0a0f;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            z-index: 2000;
+            font-weight: bold;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER ESTILO YOUTUBE -->
+    <div class="youtube-header">
+        <div class="logo">
+            <div class="logo-icon">📺</div>
+            <div class="logo-text">WALKIE<span>Tube</span></div>
+        </div>
+        <div class="stats">
+            🟢 4 canales activos | 🔗 Conexión directa | 🎤 Voz y texto
+        </div>
+    </div>
+
+    <div class="youtube-grid" id="youtubeGrid">
+        <!-- Los 4 walkies se generan aquí con JavaScript -->
+    </div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(function(){
+    // Configuración de servidores
+    const ICE_SERVERS = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' },
+            { urls: 'stun:stun.cloudflare.com:3478' },
+            { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+            { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+            { urls: 'turn:openrelay.metered.ca:3478', username: 'openrelayproject', credential: 'openrelayproject' }
+        ],
+        iceCandidatePoolSize: 10,
+        iceTransportPolicy: 'all'
+    };
+    const PEER_CONFIG = { host: '0.peerjs.com', port: 443, secure: true, config: ICE_SERVERS, debug: 0 };
+
+    const canales = [
+        { id: 0, nombre: "CANAL 1", userA: "moncho", userB: "luci", nombreA: "moncho", nombreB: "luci", color: "#ff6b6b" },
+        { id: 1, nombre: "CANAL 2", userA: "MONCHO", userB: "diana", nombreA: "MONCHO", nombreB: "diana", color: "#ffa502" },
+        { id: 2, nombre: "CANAL 3", userA: "MoNCHo", userB: "jorge", nombreA: "MoNCHo", nombreB: "jorge", color: "#9b59b6" },
+        { id: 3, nombre: "CANAL 4", userA: "user1", userB: "user2", nombreA: "user1", nombreB: "user2", color: "#3498db" }
+    ];
+
+    let instancias = [];
+
+    class WalkieEmbed {
+        constructor(canal, containerId) {
+            this.canal = canal;
+            this.idx = canal.id;
+            this.userAId = canal.userA;
+            this.userBId = canal.userB;
+            this.nombreA = canal.nombreA;
+            this.nombreB = canal.nombreB;
+            this.miId = "";
+            this.idDestino = "";
+            this.peer = null;
+            this.stream = null;
+            this.llamada = null;
+            this.audio = null;
+            this.conectado = false;
+            this.hablando = false;
+            this.dataConnection = null;
+            this.modoActual = "voz";
+            this.manosLibresActivo = false;
+            this.cambioAutomaticoHabilitado = true;
+            this.reconectando = false;
+            this.container = document.getElementById(containerId);
+            this.initDOM();
+            this.initEventListeners();
+        }
+
+        initDOM() {
+            // Buscar elementos dentro del container
+            this.miIdSpan = this.container.querySelector('.miId');
+            this.otroIdSpan = this.container.querySelector('.otroId');
+            this.miIdPeque = this.container.querySelector('.miIdPeque');
+            this.otroIdPeque = this.container.querySelector('.otroIdPeque');
+            this.statusMi = this.container.querySelector('.status-mi');
+            this.statusOtro = this.container.querySelector('.status-otro');
+            this.estadoDiv = this.container.querySelector('.estadoDiv');
+            this.pttBtn = this.container.querySelector('.embed-ptt');
+            this.chatMsgs = this.container.querySelector('.chatMsgs');
+            this.msgInput = this.container.querySelector('.msgInput');
+            this.panelChat = this.container.querySelector('.panelChat');
+            this.btnVoz = this.container.querySelector('.btnVoz');
+            this.btnTexto = this.container.querySelector('.btnTexto');
+            this.indicadorDiv = this.container.querySelector('.embed-indicador');
+            this.modoBtn = this.container.querySelector('.embed-modo');
+            this.limpiarBtn = this.container.querySelector('.embed-limpiar');
+            this.llamarBtn = this.container.querySelector('.embed-llamar');
+            this.manosLibresBtn = this.container.querySelector('.embed-manos');
+        }
+
+        actualizarIndicador(hablando, quien) {
+            if(!this.indicadorDiv) return;
+            if(hablando) {
+                this.indicadorDiv.innerHTML = `<span class="embed-indicador-on">🎤 ${quien} está hablando 🔴</span>`;
+            } else {
+                this.indicadorDiv.innerHTML = `<span class="embed-indicador-off">🔇 Nadie está hablando</span>`;
+            }
+        }
+
+        mostrarToast(msg) {
+            let toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
+        actualizarUI() {
+            if(this.miIdSpan) this.miIdSpan.innerText = this.miId || "❌";
+            if(this.otroIdSpan) this.otroIdSpan.innerText = this.idDestino || "❌";
+            if(this.miIdPeque) this.miIdPeque.innerText = this.miId || "---";
+            if(this.otroIdPeque) this.otroIdPeque.innerText = this.idDestino || "---";
+            if(this.statusMi) this.statusMi.innerHTML = this.conectado ? '🟢 Conectado' : '🟡 Conectando...';
+            if(this.statusOtro && this.idDestino) this.statusOtro.innerHTML = `🎯 ${this.idDestino}`;
+            
+            const btnA = this.container.querySelector('.user-a');
+            const btnB = this.container.querySelector('.user-b');
+            if(btnA && btnB) {
+                if(this.miId === this.userAId) {
+                    btnA.classList.add('selected');
+                    btnB.classList.remove('selected');
+                } else if(this.miId === this.userBId) {
+                    btnB.classList.add('selected');
+                    btnA.classList.remove('selected');
+                } else {
+                    btnA.classList.remove('selected');
+                    btnB.classList.remove('selected');
+                }
+            }
+        }
+
+        actualizarEstado(texto, tipo) {
+            if(this.estadoDiv) {
+                this.estadoDiv.innerHTML = texto;
+                this.estadoDiv.className = `embed-estado ${tipo}`;
+            }
+        }
+
+        reproducirSonidoLocal() {
+            try { new Audio('sonido.wav').play().catch(e=>{}); } catch(e){}
+        }
+        reproducirSonidoLlamada() {
+            try { new Audio('sonido2.wav').play().catch(e=>{}); } catch(e){}
+        }
+
+        agregarMensajeChat(remitente, texto, esMio) {
+            if(!this.chatMsgs) return;
+            if(this.chatMsgs.children.length === 1 && this.chatMsgs.children[0].innerText.includes("Mensajes")) {
+                this.chatMsgs.innerHTML = "";
+            }
+            const msgDiv = document.createElement('div');
+            msgDiv.className = esMio ? 'embed-mensaje-propio' : 'embed-mensaje-otro';
+            msgDiv.innerHTML = `<div>${remitente}: ${texto}</div>`;
+            this.chatMsgs.appendChild(msgDiv);
+            this.chatMsgs.scrollTop = this.chatMsgs.scrollHeight;
+        }
+
+        enviarEstadoHablando(estado) {
+            if (this.dataConnection && this.dataConnection.open) {
+                this.dataConnection.send({ type: 'hablando', desde: this.miId, estado: estado });
+            }
+        }
+
+        cambiarATextoAutomatico(origen) {
+            if (!this.cambioAutomaticoHabilitado || this.modoActual === "texto") return;
+            this.cambioAutomaticoHabilitado = false;
+            this.modoActual = "texto";
+            this.btnVoz.style.background = '#1e1e2a';
+            this.btnTexto.style.background = '#ffa502';
+            this.pttBtn.style.display = 'none';
+            this.panelChat.style.display = 'block';
+            if (this.hablando && !this.manosLibresActivo) {
+                this.detenerLlamada();
+                this.hablando = false;
+                this.pttBtn.style.background = 'radial-gradient(#34495e,#2c3e50)';
+                this.pttBtn.innerHTML = '🎤<br>PTT';
+                this.enviarEstadoHablando(false);
+            }
+            setTimeout(() => { this.cambioAutomaticoHabilitado = true; }, 500);
+        }
+
+        cambiarAVozManual() {
+            if (this.modoActual === "voz") return;
+            this.modoActual = "voz";
+            this.btnVoz.style.background = '#2ed573';
+            this.btnTexto.style.background = '#1e1e2a';
+            this.pttBtn.style.display = 'flex';
+            this.panelChat.style.display = 'none';
+        }
+
+        async iniciarLlamada() {
+            if(!this.peer || !this.idDestino) return false;
+            if(!this.stream) {
+                try { 
+                    this.stream = await navigator.mediaDevices.getUserMedia({ audio: true }); 
+                    this.stream.getAudioTracks().forEach(t => t.enabled = false); 
+                } catch(e) { 
+                    this.mostrarToast('🎤 Permite el micrófono'); 
+                    return false; 
+                }
+            }
+            this.stream.getAudioTracks().forEach(t => t.enabled = true);
+            if(this.llamada) try { this.llamada.close(); } catch(e) {}
+            try {
+                this.llamada = this.peer.call(this.idDestino, this.stream);
+                return true;
+            } catch(e) { return false; }
+        }
+
+        detenerLlamada() { 
+            if(this.stream) this.stream.getAudioTracks().forEach(t => t.enabled = false); 
+            if(this.llamada) { try { this.llamada.close(); } catch(e) {} this.llamada = null; } 
+        }
+
+        enviarMensajeTexto() {
+            const texto = this.msgInput?.value.trim();
+            if(!texto) { this.mostrarToast('📝 Escribe un mensaje'); return; }
+            if(!this.idDestino) { this.mostrarToast('⚠️ Selecciona identidad'); return; }
+            if (this.modoActual !== "texto") this.cambiarATextoAutomatico("Yo");
+            if (this.dataConnection?.open) {
+                this.dataConnection.send({ type: 'texto', desde: this.miId, texto: texto });
+                this.dataConnection.send({ type: 'sonido', desde: this.miId });
+                this.agregarMensajeChat(this.miId, texto, true);
+                this.msgInput.value = '';
+            } else { this.mostrarToast('🔄 Canal no disponible'); }
+        }
+
+        establecerConexionDatos() {
+            if (!this.peer || !this.idDestino) return;
+            if (this.dataConnection?.open) return;
+            try {
+                this.dataConnection = this.peer.connect(this.idDestino, { reliable: true });
+                this.dataConnection.on('open', () => { this.dataConnection.send({ type: 'handshake', desde: this.miId }); });
+                this.dataConnection.on('data', (data) => {
+                    if (data.type === 'texto') {
+                        this.agregarMensajeChat(data.desde, data.texto, false);
+                        if (this.cambioAutomaticoHabilitado && this.modoActual !== "texto") {
+                            this.cambiarATextoAutomatico(data.desde);
+                        }
+                    } else if (data.type === 'sonido') this.reproducirSonidoLocal();
+                    else if (data.type === 'llamada') {
+                        this.mostrarToast(`📞 ${data.desde} te llama!`);
+                        this.reproducirSonidoLlamada();
+                    } else if (data.type === 'hablando') this.actualizarIndicador(data.estado, data.desde);
+                });
+                this.dataConnection.on('close', () => { this.dataConnection = null; });
+            } catch(e) {}
+        }
+
+        conectarPeer(miID, otroID) {
+            if(this.reconectando) return;
+            this.reconectando = true;
+            if (this.peer) { try { this.peer.destroy(); } catch(e) {} this.peer = null; }
+            this.miId = miID; this.idDestino = otroID; this.conectado = false; this.hablando = false;
+            this.actualizarUI();
+            this.mostrarToast(`🔌 Conectando como "${miID}"...`);
+            this.actualizarEstado(`🔄 Conectando como "${miID}"...`, 'amarillo');
+            if(this.pttBtn) this.pttBtn.classList.add('disabled');
+            try {
+                this.peer = new Peer(miID, PEER_CONFIG);
+                this.peer.on('open', () => {
+                    this.conectado = true;
+                    this.reconectando = false;
+                    this.actualizarEstado(`✅ Conectado como "${this.miId}"`, 'verde');
+                    if(this.pttBtn) this.pttBtn.classList.remove('disabled');
+                    this.mostrarToast(`✅ Conectado como "${this.miId}"!`);
+                    this.actualizarUI();
+                    this.establecerConexionDatos();
+                });
+                this.peer.on('connection', (conn) => {
+                    if (this.dataConnection) try { this.dataConnection.close(); } catch(e) {}
+                    this.dataConnection = conn;
+                    this.dataConnection.on('open', () => { this.dataConnection.send({ type: 'handshake', desde: this.miId }); });
+                    this.dataConnection.on('data', (data) => {
+                        if (data.type === 'texto') {
+                            this.agregarMensajeChat(data.desde, data.texto, false);
+                            if (this.cambioAutomaticoHabilitado && this.modoActual !== "texto") this.cambiarATextoAutomatico(data.desde);
+                        } else if (data.type === 'sonido') this.reproducirSonidoLocal();
+                        else if (data.type === 'llamada') { this.mostrarToast(`📞 ${data.desde} te llama!`); this.reproducirSonidoLlamada(); }
+                        else if (data.type === 'hablando') this.actualizarIndicador(data.estado, data.desde);
+                    });
+                });
+                this.peer.on('call', (call) => {
+                    if (this.stream) {
+                        call.answer(this.stream);
+                        call.on('stream', (s) => {
+                            if (this.audio) { this.audio.pause(); this.audio.srcObject = null; }
+                            this.audio = new Audio();
+                            this.audio.srcObject = s;
+                            this.audio.autoplay = true;
+                        });
+                    }
+                });
+                this.peer.on('error', (err) => {
+                    this.reconectando = false;
+                    if (err.type === 'unavailable-id') {
+                        this.mostrarToast(`❌ ID "${miID}" ya en uso`);
+                        this.actualizarEstado(`❌ ID "${miID}" ocupado`, 'rojo');
+                    }
+                });
+                this.peer.on('disconnected', () => { this.conectado = false; if(this.pttBtn) this.pttBtn.classList.add('disabled'); });
+            } catch(e) { this.reconectando = false; }
+        }
+
+        seleccionarUserA() { if(this.miId === this.userAId) return; if(this.peer) this.peer.destroy(); this.conectarPeer(this.userAId, this.userBId); }
+        seleccionarUserB() { if(this.miId === this.userBId) return; if(this.peer) this.peer.destroy(); this.conectarPeer(this.userBId, this.userAId); }
+        
+        limpiar() {
+            if(this.dataConnection) this.dataConnection.close();
+            if(this.llamada) this.llamada.close();
+            if(this.peer) this.peer.destroy();
+            if(this.stream) this.stream.getTracks().forEach(t => t.stop());
+            this.conectado = false; this.hablando = false;
+            this.miId = ""; this.idDestino = "";
+            this.actualizarUI();
+            this.actualizarEstado(`🧹 Limpiado. Selecciona ${this.nombreA} o ${this.nombreB}`, 'amarillo');
+            if(this.pttBtn) this.pttBtn.classList.add('disabled');
+            this.actualizarIndicador(false, "");
+            this.dataConnection = null; this.peer = null; this.stream = null; this.llamada = null;
+        }
+        
+        toggleManosLibres() {
+            this.manosLibresActivo = !this.manosLibresActivo;
+            if (this.manosLibresActivo) {
+                this.manosLibresBtn.classList.add('activo');
+                this.manosLibresBtn.innerHTML = '🎙️ ON';
+                this.pttBtn.style.opacity = '0.5';
+                this.pttBtn.style.pointerEvents = 'none';
+                if (this.llamada && this.stream) { this.stream.getAudioTracks().forEach(t => t.enabled = true); this.enviarEstadoHablando(true); }
+                else if (this.conectado && this.idDestino) { this.iniciarLlamada().then(() => { if(this.stream) { this.stream.getAudioTracks().forEach(t => t.enabled = true); this.enviarEstadoHablando(true); } }); }
+            } else {
+                this.manosLibresBtn.classList.remove('activo');
+                this.manosLibresBtn.innerHTML = '🔊 ML';
+                this.pttBtn.style.opacity = '1';
+                this.pttBtn.style.pointerEvents = 'auto';
+                if (this.llamada && this.hablando) { this.detenerLlamada(); this.hablando = false; this.enviarEstadoHablando(false); }
+            }
+        }
+        
+        enviarLlamada() {
+            if (!this.idDestino) { this.mostrarToast('⚠️ Selecciona identidad'); return; }
+            if (!this.conectado) { this.mostrarToast('⚠️ Espera conexión'); return; }
+            if (this.dataConnection?.open) {
+                this.dataConnection.send({ type: 'llamada', desde: this.miId });
+                this.reproducirSonidoLlamada();
+                this.mostrarToast(`✅ Notón a ${this.idDestino}`);
+            } else { this.mostrarToast('🔄 Canal no disponible'); }
+        }
+        
+        toggleModo() { if (this.modoActual === "voz") this.cambiarAVozManual(); else this.cambiarAVozManual(); }
+
+        initEventListeners() {
+            const btnA = this.container.querySelector('.user-a');
+            const btnB = this.container.querySelector('.user-b');
+            const enviarBtn = this.container.querySelector('.enviarBtn');
+            
+            btnA.onclick = () => this.seleccionarUserA();
+            btnB.onclick = () => this.seleccionarUserB();
+            this.modoBtn.onclick = () => this.toggleModo();
+            this.limpiarBtn.onclick = () => this.limpiar();
+            this.llamarBtn.onclick = () => this.enviarLlamada();
+            this.manosLibresBtn.onclick = () => this.toggleManosLibres();
+            enviarBtn.onclick = () => this.enviarMensajeTexto();
+            this.msgInput.onkeypress = (e) => { if (e.key === 'Enter') this.enviarMensajeTexto(); };
+            this.btnVoz.onclick = () => this.cambiarAVozManual();
+            this.btnTexto.onclick = () => this.cambiarATextoAutomatico("Manual");
+            
+            let isPressed = false;
+            const startTalk = async () => {
+                if (this.manosLibresActivo) return;
+                if (!this.conectado) { this.mostrarToast('⚠️ Espera conexión'); return; }
+                if (!this.hablando && !isPressed) {
+                    isPressed = true;
+                    if(await this.iniciarLlamada()) {
+                        this.hablando = true;
+                        this.pttBtn.style.background = 'radial-gradient(#ff4757,#c0392b)';
+                        this.pttBtn.innerHTML = '🎤<br>HABLANDO';
+                        this.enviarEstadoHablando(true);
+                    } else isPressed = false;
+                }
+            };
+            const stopTalk = () => {
+                if (this.manosLibresActivo) return;
+                if (this.hablando && isPressed) {
+                    this.detenerLlamada();
+                    this.hablando = false;
+                    this.pttBtn.style.background = 'radial-gradient(#34495e,#2c3e50)';
+                    this.pttBtn.innerHTML = '🎤<br>PTT';
+                    this.enviarEstadoHablando(false);
+                }
+                isPressed = false;
+            };
+            this.pttBtn.onmousedown = startTalk;
+            this.pttBtn.onmouseup = stopTalk;
+            this.pttBtn.onmouseleave = stopTalk;
+            this.pttBtn.ontouchstart = (e) => { e.preventDefault(); startTalk(); };
+            this.pttBtn.ontouchend = (e) => { e.preventDefault(); stopTalk(); };
+        }
+    }
+
+    // Generar los 4 walkies en el grid
+    const grid = document.getElementById('youtubeGrid');
+    
+    canales.forEach((canal, idx) => {
+        const cardId = `walkie_${idx}`;
+        const cardHTML = `
+            <div class="video-card">
+                <div class="video-thumbnail">
+                    <div id="${cardId}" class="walkie-embed">
+                        <div class="embed-header">
+                            <h2>📞 WALKIE ${canal.nombre}</h2>
+                            <p>${canal.userA} ↔ ${canal.userB}</p>
+                        </div>
+                        
+                        <div class="embed-indicador">
+                            <span class="embed-indicador-off">🔇 Nadie está hablando</span>
+                        </div>
+                        
+                        <div class="embed-selector">
+                            <div class="embed-selector-title">🎭 ELIGE TU IDENTIDAD:</div>
+                            <div class="embed-user-buttons">
+                                <button class="embed-user-btn user-a">👤 ${canal.nombreA}</button>
+                                <button class="embed-user-btn user-b">👥 ${canal.nombreB}</button>
+                            </div>
+                        </div>
+                        
+                        <div class="embed-ids">
+                            <div class="embed-id-row"><span class="embed-id-label">🎭 Mi ID:</span><span class="embed-id-value miId">---</span></div>
+                            <div class="embed-id-row"><span class="embed-id-label">👥 ID amigo:</span><span class="embed-id-value otroId">---</span></div>
+                        </div>
+                        
+                        <div class="embed-auto-status">
+                            🔄 Mantenimiento activo | 🎵 Anti-suspensión ON
+                        </div>
+                        
+                        <div class="embed-walkies-mini">
+                            <div class="embed-walkie-card card-mi"><div class="embed-walkie-num">🎭 YO</div><div class="embed-walkie-status status-mi">---</div><div class="embed-walkie-id miIdPeque">---</div></div>
+                            <div class="embed-walkie-card card-otro"><div class="embed-walkie-num">👥 OTRO</div><div class="embed-walkie-status status-otro">---</div><div class="embed-walkie-id otroIdPeque">---</div></div>
+                        </div>
+                        
+                        <div class="embed-botonera">
+                            <button class="embed-modo">📻 PTT</button>
+                            <button class="embed-limpiar">🧹 LIMPIAR</button>
+                            <button class="embed-llamar">📞 LLAMAR</button>
+                            <button class="embed-manos">🔊 ML</button>
+                        </div>
+                        
+                        <div class="embed-ptt disabled">🎤<br>PTT</div>
+                        
+                        <div class="embed-chat-area">
+                            <div class="embed-chat-header">
+                                <button class="btnVoz">🎤 VOZ</button>
+                                <button class="btnTexto">💬 TEXTO</button>
+                            </div>
+                            <div class="panelChat" style="display: none;">
+                                <div class="embed-chat-msgs chatMsgs"><div style="color:#888;text-align:center;">💬 Mensajes</div></div>
+                                <div class="embed-input-texto">
+                                    <input type="text" class="msgInput" placeholder="Mensaje...">
+                                    <button class="enviarBtn">📨</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="embed-estado rojo">⚡ Selecciona ${canal.nombreA} o ${canal.nombreB}</div>
+                    </div>
+                </div>
+                <div class="video-info">
+                    <div class="video-title">🎤 WALKIE ${canal.nombre}</div>
+                    <div class="video-channel">${canal.userA} / ${canal.userB}</div>
+                    <div class="video-stats">🔗 Conexión directa | 🎤 Manos libres | 💬 Chat | 📞 Llamada</div>
+                </div>
+            </div>
+        `;
+        grid.insertAdjacentHTML('beforeend', cardHTML);
+        
+        // Inicializar el walkie después de crear el DOM
+        setTimeout(() => {
+            instancias.push(new WalkieEmbed(canal, cardId));
+        }, 100);
+    });
+
+    // Precargar micrófono
+    async function preloadMic() {
+        try { await navigator.mediaDevices.getUserMedia({ audio: true }); } catch(e) {}
+    }
+    preloadMic();
+})();
+</script>
+</body>
+</html>
